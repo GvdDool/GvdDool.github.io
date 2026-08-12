@@ -1,0 +1,5 @@
+# Local developer documentation and private notes
+LocalWork/
+*.log
+.DS_Store
+Thumbs.db
