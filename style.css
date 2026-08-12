@@ -499,6 +499,29 @@ a {
     color: var(--color-bg-primary);
 }
 
+.footer-counter {
+    opacity: 0;
+    transition: var(--transition-smooth);
+    cursor: default;
+    display: inline-flex;
+    align-items: center;
+}
+
+.footer-counter:hover {
+    opacity: 0.85;
+}
+
+.footer-counter img {
+    height: 20px;
+    filter: grayscale(1) brightness(0.85) contrast(1.1);
+    transition: var(--transition-smooth);
+}
+
+.footer-counter img:hover {
+    filter: none;
+}
+
+
 /* Projects Grid & Cards */
 .projects-grid {
     display: grid;
