@@ -499,28 +499,41 @@ a {
     color: var(--color-bg-primary);
 }
 
-.footer-counter {
-    opacity: 0;
-    transition: var(--transition-smooth);
-    cursor: default;
-    display: inline-flex;
-    align-items: center;
-}
-
-.footer-counter:hover {
-    opacity: 0.85;
-}
-
-.footer-counter img {
-    height: 20px;
-    filter: grayscale(1) brightness(0.85) contrast(1.1);
+/* GitHub Callout Card in Projects */
+.project-github-card {
+    border: 1px solid var(--color-border);
+    padding: 2.5rem;
+    border-radius: 6px;
+    background-color: var(--color-bg-secondary);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 3rem;
     transition: var(--transition-smooth);
 }
 
-.footer-counter img:hover {
-    filter: none;
+.project-github-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(31, 36, 33, 0.04);
+    border-color: rgba(142, 124, 104, 0.2);
 }
 
+.project-github-card h3 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+}
+
+.project-github-card p {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+}
+
+.project-github-card:hover .contact-link svg {
+    transform: translateX(4px);
+}
 
 /* Projects Grid & Cards */
 .projects-grid {
@@ -728,3 +741,59 @@ a {
     }
 }
 
+/* -------------------------------------------------------------
+ * Data / Training Tables
+ * ------------------------------------------------------------- */
+.page-header-section {
+    padding: 8rem 0 3rem;
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.data-table th {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.825rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    background-color: var(--color-bg-secondary);
+}
+
+.data-table tbody tr {
+    transition: var(--transition-smooth);
+}
+
+.data-table tbody tr:hover {
+    background-color: rgba(142, 124, 104, 0.05);
+}
+
+.data-table td a {
+    color: var(--color-accent);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.data-table td a:hover {
+    color: var(--color-text-primary);
+}
