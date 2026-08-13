@@ -663,6 +663,24 @@ a {
     margin-top: 0.25rem;
 }
 
+.pub-doi {
+    margin-top: 0.35rem;
+}
+
+.pub-doi a {
+    font-size: 0.85rem;
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.pub-doi a:hover {
+    color: var(--color-text-primary);
+}
+
 /* Responsive Design Queries */
 @media (max-width: 1024px) {
     .section-grid {
