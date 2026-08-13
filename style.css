@@ -383,6 +383,25 @@ a {
     line-height: 1.6;
 }
 
+.activity-list {
+    margin-top: 1rem;
+    list-style-type: disc;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.activity-list li {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.activity-list li strong {
+    color: var(--color-text-primary);
+}
+
 /* TBC / Placeholder Design */
 .tbc-placeholder {
     padding: 4rem 3rem;
