@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>#30DayMapChallenge 2026 | GvdDool</title>
+    <meta name="description"
+        content="30-Day Map Challenge 2026 Gallery by Gijs van den Dool (GvdDool) - interactive maps, geospatial data pipelines, and reproducible cartographic experiments.">
+    <!-- Google Fonts: Plus Jakarta Sans for body, Lora for headings -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="../../style.css">
+    <style>
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .gallery-card {
+            background-color: #FFFFFF;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .gallery-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            border-color: var(--color-border-focus);
+        }
+
+        .card-image-wrap {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background-color: #0B0F19;
+            overflow: hidden;
+        }
+
+        .card-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .gallery-card:hover .card-image-wrap img {
+            transform: scale(1.03);
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(8px);
+            color: #00F5D4;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 245, 212, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-primary);
+        }
+
+        .card-desc {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+            margin-bottom: 1.25rem;
+            flex-grow: 1;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-tag {
+            background-color: var(--color-bg-secondary);
+            color: var(--color-text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 4px 9px;
+            border-radius: 6px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: auto;
+        }
+
+        .btn-live {
+            flex: 1;
+            text-align: center;
+            background-color: var(--color-text-primary);
+            color: #FFFFFF !important;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-live:hover {
+            background-color: var(--color-accent);
+        }
+
+        .btn-code {
+            flex: 1;
+            text-align: center;
+            background-color: transparent;
+            color: var(--color-text-primary) !important;
+            border: 1px solid var(--color-border);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-code:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent) !important;
+        }
+
+        .placeholder-card {
+            border: 2px dashed var(--color-border);
+            border-radius: 12px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 340px;
+            background: rgba(243, 241, 236, 0.4);
+        }
+
+        .placeholder-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 640px) {
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+            .card-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header / Navigation -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="../../index.html#hero" class="site-logo">
+                <span class="logo-accent">G</span>vdDool
+            </a>
+            <nav class="site-nav">
+                <ul>
+                    <li><a href="../../index.html#about">About</a></li>
+                    <li><a href="../../index.html#activities">Activities</a></li>
+                    <li><a href="../../index.html#projects">Projects</a></li>
+                    <li><a href="../../index.html#publications">Publications</a></li>
+                    <li><a href="../../index.html#contact" class="nav-cta">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="site-main">
+
+        <!-- Page Header -->
+        <section class="page-header-section">
+            <div class="section-container">
+                <span class="hero-tagline">Cartographic Experiments & Spatial Code</span>
+                <h1 class="hero-title" style="font-size: 2.75rem; margin-bottom: 1rem;">#30DayMapChallenge 2026</h1>
+                <p class="lead-text" style="max-width: 780px;">An annual spatial data and cartographic challenge exploring new visualization paradigms, satellite Earth observation workflows, prompt-driven code generation, and live real-time geospatial feeds.</p>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header" style="margin-bottom: 1rem;">
+                    <span class="section-label">Gallery / 2026 Collection</span>
+                    <h2 class="section-title">Map Entries</h2>
+                </div>
+
+                <div class="gallery-grid">
+
+                    <!-- Day 10 Card -->
+                    <article class="gallery-card">
+                        <div class="card-image-wrap">
+                            <img src="day-10/day_10_preview.png" alt="2026 Seismic Pulse Map Preview" loading="lazy">
+                            <span class="card-badge">Day 10 &bull; Prompting Only</span>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">2026 Seismic Pulse</h3>
+                            <p class="card-desc">Interactive real-time map displaying all 2026 M5.5+ earthquakes directly from the USGS API, featuring dynamic geodesic P-wave and S-wave crustal travel-time propagation rings.</p>
+                            <div class="card-tags">
+                                <span class="card-tag">Prompting Only</span>
+                                <span class="card-tag">USGS Live API</span>
+                                <span class="card-tag">Leaflet</span>
+                                <span class="card-tag">Turf.js</span>
+                            </div>
+                            <div class="card-actions">
+                                <a href="day-10/day_10_prompting_only.html" class="btn-live">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                    Live Map
+                                </a>
+                                <a href="https://github.com/GvdDool/GvdDool.github.io/blob/main/projects/30dayMapChallenge-2026/day-10/day_10_prompting_only.html" target="_blank" rel="noopener noreferrer" class="btn-code">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                    View Code
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Upcoming Days Placeholder Card -->
+                    <div class="placeholder-card">
+                        <div class="placeholder-icon">🗺️</div>
+                        <h4 style="font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--color-text-primary);">More Days In Progress</h4>
+                        <p style="font-size: 0.875rem; max-width: 260px; margin-bottom: 1rem;">Additional daily entries and code repositories will be pushed as the 30-Day Map Challenge progresses.</p>
+                        <span style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-accent);">Stay Tuned</span>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 3.5rem;">
+                    <a href="../../index.html#projects" class="btn btn-secondary">&larr; Return to Main Portfolio</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 GvdDool. All rights reserved.</p>
+            <div class="footer-meta">
+                <a href="../../index.html#hero">Back to Top</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

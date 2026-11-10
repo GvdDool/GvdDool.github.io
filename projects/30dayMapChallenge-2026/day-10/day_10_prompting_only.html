@@ -1,0 +1,555 @@
+<!--
+======================================================================
+PROMPT:
+Create a single, self-contained HTML file and render the interactive map preview directly in this chat window for #30DayMapChallenge Day 10 ("Prompting Only"). Do not ask follow-up questions. Use standard CDN links for Leaflet.js (`1.9.4`), Turf.js (`@turf/turf@6`), and TopoJSON Client (`topojson-client@3`).
+
+Build the map with these exact specifications:
+
+1. CANVAS & DUAL BASEMAP (TILES + VECTOR FALLBACK):
+   - Full-viewport dark canvas (`background: #0B0F19`, `100vw`, `100vh`, `margin: 0`) with default Leaflet zoom controls disabled for a clean editorial poster look.
+   - Add CartoDB Dark Matter tiles (`https://{s}://{z}/{x}/{y}{r}.png`).
+   - ALSO fetch `https://jsdelivr.net`, convert it via `topojson.feature`, and render the countries as a crisp vector layer (`fillColor: '#141B2D'`, `fillOpacity: 0.7`, `color: '#26334D'`, `weight: 0.8`) underneath the data layers so the continents are guaranteed to render sharply even if map tiles are blocked.
+
+2. LIVE 2026 USGS EARTHQUAKE DATA:
+   - Fetch live GeoJSON directly from:
+     `https://usgs.gov`
+   - Plot all 2026 M5.5+ earthquakes as glowing circular markers (`L.circleMarker`) with radius `Math.pow(mag, 2.2) * 0.38`, subtle stroke (`weight: 0.5`, `color: '#ffffff'`, `opacity: 0.4`), `fillOpacity: 0.75`, and fill color by hypocenter depth:
+     - Shallow (< 70 km): `#00F5D4` (cyan)
+     - Intermediate (70–300 km): `#3B82F6` (electric blue)
+     - Deep (> 300 km): `#A855F7` (violet)
+   - Bind a clean dark-themed tooltip/popup showing Magnitude, Depth, Date, and Location on hover.
+
+3. #1 STRONGEST 2026 EARTHQUAKE & SEISMIC WAVE RINGS:
+   - Automatically find the single earthquake with the highest `properties.mag` in the 2026 dataset.
+   - Center the map (`setView`) on that #1 earthquake at zoom level `4`, and mark its epicenter with a high-visibility pulsing or double-ringed white/cyan marker.
+   - Using `turf.circle([lng, lat], radiusKm, {steps: 128, units: 'kilometers'})`, draw concentric geodesic travel-time rings radiating from the #1 earthquake:
+     - **P-Wave arrival rings (6.0 km/s):** 2 min (`720 km`), 5 min (`1800 km`), and 10 min (`3600 km`) — styled as solid `#00F5D4` cyan lines (`weight: 1.5`, `fillOpacity: 0.02`).
+     - **S-Wave arrival rings (3.5 km/s):** 2 min (`420 km`), 5 min (`1050 km`), and 10 min (`2100 km`) — styled as dashed `#F59E0B` amber lines (`weight: 1.5`, `dashArray: '6, 6'`, `fillOpacity: 0`).
+   - Place clean, pill-shaped `L.divIcon` text labels (`P-wave 2m`, `P-wave 5m`, `P-wave 10m`, `S-wave 2m`, `S-wave 5m`, `S-wave 10m`) at the top (northernmost coordinate) of each respective ring so they never collide.
+
+4. EDITORIAL UI OVERLAYS (CSS):
+   - Use clean sans-serif system typography (`Inter`, `system-ui`, `-apple-system`, sans-serif).
+   - **Top-left glass card** (`background: rgba(11, 15, 25, 0.85)`, `backdrop-filter: blur(10px)`, `border: 1px solid #26334D`, `border-radius: 10px`, `padding: 18px`, `max-width: 340px`):
+     - Kicker: `30-DAY MAP CHALLENGE • DAY 10: PROMPTING ONLY` (small uppercase cyan text)
+     - Title: `2026 SEISMIC PULSE`
+     - Subtitle: `Global M5.5+ earthquakes in 2026 & theoretical crustal wave propagation from the year's strongest tremor.`
+     - Highlight box dynamically populated with the #1 quake's **Magnitude (Mw)**, **Place Name**, **Date (UTC)**, **Depth (km)**, and total count of 2026 M5.5+ quakes.
+   - **Bottom-left compact legend** showing Depth categories (`<70 km`, `70–300 km`, `>300 km`) and Wave Arrival Rings (`P-wave 6.0 km/s` solid cyan vs. `S-wave 3.5 km/s` dashed amber).
+   - **Bottom-right attribution pill**: `Data: USGS Earthquake Hazards Program & Natural Earth | #30DayMapChallenge Day 10`.
+
+Output the complete code and launch the interactive preview immediately.
+
+SECOND PROMPT: 
+we need a click event, because it's nice to have the circles around the strongest, but that leaves all other points without functionality
+
+======================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30 Day Map Challenge - Day 10: Prompting Only</title>
+
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+    <style>
+        /* CSS RESET & BASE STYLES */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0B0F19;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* MAP CONTAINER */
+        #map {
+            width: 100vw;
+            height: 100vh;
+            background: #0B0F19;
+        }
+
+        .leaflet-container {
+            background: #0B0F19 !important;
+        }
+
+        /* HOTOSM Tile Inversion (Dark Mode) */
+        .dark-tiles {
+            filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(110%) saturate(70%);
+        }
+
+        /* UI OVERLAYS */
+        .overlay {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .overlay>* {
+            pointer-events: auto;
+        }
+
+        .glass-panel {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #26334D;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* TOP LEFT CARD */
+        .top-left {
+            top: 20px;
+            left: 20px;
+            max-width: 340px;
+            width: calc(100vw - 40px);
+        }
+
+        .kicker {
+            color: #00F5D4;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #9BA3AF;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .stats-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .stats-box strong {
+            color: #E5E7EB;
+        }
+
+        .stat-value {
+            color: #00F5D4;
+            font-weight: 600;
+        }
+
+        /* BOTTOM LEFT LEGEND */
+        .bottom-left {
+            bottom: 20px;
+            left: 20px;
+            padding: 14px 18px;
+        }
+
+        .legend-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #9BA3AF;
+            letter-spacing: 1px;
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #E5E7EB;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .legend-line {
+            width: 16px;
+            height: 2px;
+            margin-right: 10px;
+        }
+
+        .line-solid {
+            background-color: #00F5D4;
+        }
+
+        .line-dashed {
+            background: repeating-linear-gradient(to right, #F59E0B, #F59E0B 4px, transparent 4px, transparent 8px);
+        }
+
+        .legend-divider {
+            height: 1px;
+            background: #26334D;
+            margin: 12px 0;
+        }
+
+        /* BOTTOM RIGHT ATTRIBUTION */
+        .bottom-right {
+            bottom: 20px;
+            right: 20px;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 10px;
+            color: #9BA3AF;
+        }
+
+        .bottom-right a {
+            color: #00F5D4;
+            text-decoration: none;
+        }
+
+        /* MAP MARKERS & ANIMATIONS */
+        .epicenter-container {
+            pointer-events: none;
+        }
+
+        .epicenter-pulse {
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border: 2px solid #00F5D4;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00F5D4, 0 0 0 0 rgba(0, 245, 212, 0.7);
+            animation: pulse 2s infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 15px #00F5D4, 0 0 0 0 rgba(0, 245, 212, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 15px #00F5D4, 0 0 0 25px rgba(0, 245, 212, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 15px #00F5D4, 0 0 0 0 rgba(0, 245, 212, 0);
+            }
+        }
+
+        .wave-label-container {
+            pointer-events: none;
+        }
+
+        .wave-label {
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid;
+            border-radius: 12px;
+            padding: 3px 8px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            text-align: center;
+            transform: translate(-50%, -50%);
+            backdrop-filter: blur(4px);
+        }
+
+        .p-wave-label {
+            border-color: #00F5D4;
+            color: #00F5D4;
+        }
+
+        .s-wave-label {
+            border-color: #F59E0B;
+            color: #F59E0B;
+        }
+
+        /* TOOLTIP */
+        .leaflet-tooltip.dark-tooltip {
+            background: rgba(11, 15, 25, 0.95);
+            border: 1px solid #26334D;
+            color: #E5E7EB;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            pointer-events: auto;
+        }
+
+        .leaflet-tooltip-top.dark-tooltip:before {
+            border-top-color: #26334D;
+        }
+
+        .tooltip-row strong {
+            color: #9BA3AF;
+            font-weight: 500;
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #ffffff;
+            border-bottom: 1px solid #26334D;
+            padding-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MAP CONTAINER -->
+    <div id="map"></div>
+
+    <!-- UI OVERLAYS -->
+    <div class="overlay top-left glass-panel">
+        <div class="kicker">30-Day Map Challenge • Day 10: Prompting Only</div>
+        <h1>2026 SEISMIC PULSE</h1>
+        <div class="subtitle">Global M5.5+ earthquakes in 2026 & theoretical crustal wave propagation from the year's
+            strongest tremor.</div>
+
+        <div class="stats-box" id="stats-box">
+            Loading 2026 seismic data...
+        </div>
+    </div>
+
+    <div class="overlay bottom-left glass-panel">
+        <div class="legend-section-title">Hypocenter Depth</div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #00F5D4;"></div><span>Shallow (&lt; 70 km)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #3B82F6;"></div><span>Intermediate (70–300 km)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #A855F7;"></div><span>Deep (&gt; 300 km)</span>
+        </div>
+
+        <div class="legend-divider"></div>
+
+        <div class="legend-section-title">Seismic Waves (Focused Quake)</div>
+        <div class="legend-item">
+            <div class="legend-line line-solid"></div><span>P-wave (6.0 km/s)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line line-dashed"></div><span>S-wave (3.5 km/s)</span>
+        </div>
+    </div>
+
+    <div class="overlay bottom-right glass-panel">
+        Data: <a href="https://earthquake.usgs.gov/" target="_blank">USGS</a> & HOTOSM | #30DayMapChallenge
+    </div>
+
+    <script>
+        // 1. Initialize Map
+        const map = L.map('map', {
+            zoomControl: false,
+            center: [20, 0],
+            zoom: 2,
+            worldCopyJump: true
+        });
+
+        // 2. Vector Fallback (Placed in a lower pane)
+        map.createPane('topoPane');
+        map.getPane('topoPane').style.zIndex = 300;
+
+        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+            .then(res => res.json())
+            .then(topoData => {
+                const geojsonData = topojson.feature(topoData, topoData.objects.countries);
+                L.geoJSON(geojsonData, {
+                    style: { fillColor: '#141B2D', fillOpacity: 0.7, color: '#26334D', weight: 0.8 },
+                    pane: 'topoPane',
+                    interactive: false
+                }).addTo(map);
+            });
+
+        // 3. HOTOSM Tile Layer (Inverted for dark mode)
+        L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors, HOTOSM',
+            className: 'dark-tiles',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 4. Global Layer Groups
+        const quakesLayer = L.layerGroup().addTo(map);
+        const wavesLayer = L.layerGroup().addTo(map);
+
+        let overallMaxMag = -1;
+        let totalQuakesCount = 0;
+
+        // 5. Fetch Live USGS Data
+        const usgsUrl = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-01-01&endtime=2026-12-31&minmagnitude=5.5';
+
+        fetch(usgsUrl)
+            .then(res => res.json())
+            .then(data => processEarthquakeData(data))
+            .catch(err => {
+                console.warn('Network fetch failed, generating mock data for preview.', err);
+                const mockData = {
+                    features: [
+                        { type: 'Feature', properties: { mag: 5.6, place: "Off East Coast of Honshu, Japan", time: Date.now() }, geometry: { coordinates: [142.0, 38.0, 45] } },
+                        { type: 'Feature', properties: { mag: 6.2, place: "Central Mid-Atlantic Ridge", time: Date.now() }, geometry: { coordinates: [-30.0, 10.0, 10] } },
+                        { type: 'Feature', properties: { mag: 7.8, place: "Kermadec Islands region", time: Date.now() }, geometry: { coordinates: [-177.5, -29.2, 120] } }
+                    ]
+                };
+                processEarthquakeData(mockData);
+            });
+
+        function processEarthquakeData(data) {
+            const features = data.features;
+            totalQuakesCount = features.length;
+            let maxQuake = null;
+
+            features.forEach(feature => {
+                const props = feature.properties;
+                const coords = feature.geometry.coordinates; // [lng, lat, depth]
+                const mag = props.mag;
+                const depth = coords[2] || 0;
+
+                if (mag > overallMaxMag) {
+                    overallMaxMag = mag;
+                    maxQuake = feature;
+                }
+
+                // Color by depth
+                let color = '#00F5D4'; // Shallow
+                if (depth >= 70 && depth <= 300) color = '#3B82F6'; // Intermediate
+                if (depth > 300) color = '#A855F7'; // Deep
+
+                const radius = Math.pow(mag, 2.2) * 0.38;
+
+                const marker = L.circleMarker([coords[1], coords[0]], {
+                    radius: radius,
+                    fillColor: color,
+                    fillOpacity: 0.75,
+                    color: '#ffffff',
+                    weight: 0.5,
+                    opacity: 0.4
+                });
+
+                // Tooltip
+                marker.bindTooltip(`
+                    <div class="tooltip-title">M ${mag.toFixed(1)} • ${props.place}</div>
+                    <div class="tooltip-row"><strong>Depth:</strong> ${depth} km</div>
+                    <div class="tooltip-row"><strong>Date:</strong> ${new Date(props.time).toLocaleString()}</div>
+                    <div class="tooltip-row" style="color: #00F5D4; margin-top: 6px; font-weight: 600;">Click to view wave propagation ⚡</div>
+                `, { direction: 'top', className: 'dark-tooltip' });
+
+                // Click Event to shift focus
+                marker.on('click', () => {
+                    map.flyTo([coords[1], coords[0]], 4, { duration: 1.5 });
+                    focusEarthquake(feature);
+                });
+
+                marker.addTo(quakesLayer);
+            });
+
+            if (maxQuake) {
+                map.setView([maxQuake.geometry.coordinates[1], maxQuake.geometry.coordinates[0]], 4);
+                focusEarthquake(maxQuake);
+            }
+        }
+
+        function focusEarthquake(feature) {
+            // Clear old rings & markers
+            wavesLayer.clearLayers();
+
+            const coords = feature.geometry.coordinates;
+            const lng = coords[0];
+            const lat = coords[1];
+            const props = feature.properties;
+
+            // Epicenter Pulse
+            const pulseIcon = L.divIcon({
+                className: 'epicenter-container',
+                html: '<div class="epicenter-pulse"></div>',
+                iconSize: [0, 0]
+            });
+            L.marker([lat, lng], { icon: pulseIcon }).addTo(wavesLayer);
+
+            // UI Update
+            const isStrongest = props.mag === overallMaxMag;
+            const eventTitle = isStrongest ? "STRONGEST EVENT:" : "SELECTED EVENT:";
+
+            document.getElementById('stats-box').innerHTML = `
+                <div style="margin-bottom: 6px;">Total 2026 M5.5+ Events: <span class="stat-value">${totalQuakesCount}</span></div>
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">
+                    <strong>${eventTitle}</strong><br/>
+                    <span class="stat-value" style="font-size:16px;">M ${props.mag.toFixed(1)}</span><br/>
+                    ${props.place}<br/>
+                    <strong>Depth:</strong> ${coords[2] || 0} km<br/>
+                    <strong>Time:</strong> ${new Date(props.time).toUTCString()}
+                </div>
+            `;
+
+            // Wave Configs (in kilometers)
+            const pWaves = [{ time: '2m', distKm: 720 }, { time: '5m', distKm: 1800 }, { time: '10m', distKm: 3600 }];
+            const sWaves = [{ time: '2m', distKm: 420 }, { time: '5m', distKm: 1050 }, { time: '10m', distKm: 2100 }];
+
+            // Draw Perfect Circles using L.circle (Prevents Mercator Distortion!)
+            const drawWaveRings = (waves, options, labelClass, labelPrefix) => {
+                waves.forEach(w => {
+                    // Render perfectly round visual circle in Leaflet
+                    L.circle([lat, lng], {
+                        radius: w.distKm * 1000,
+                        ...options,
+                        interactive: false
+                    }).addTo(wavesLayer);
+
+                    // Use Turf strictly to calculate the geographic northernmost label placement
+                    const topPt = turf.destination([lng, lat], w.distKm, 0, { units: 'kilometers' });
+
+                    const labelIcon = L.divIcon({
+                        className: 'wave-label-container',
+                        html: `<div class="wave-label ${labelClass}">${labelPrefix} ${w.time}</div>`,
+                        iconSize: [0, 0]
+                    });
+
+                    L.marker([topPt.geometry.coordinates[1], topPt.geometry.coordinates[0]], {
+                        icon: labelIcon,
+                        interactive: false
+                    }).addTo(wavesLayer);
+                });
+            };
+
+            // P-Waves
+            drawWaveRings(pWaves,
+                { color: '#00F5D4', weight: 1.5, fillOpacity: 0.02, fillColor: '#00F5D4' },
+                'p-wave-label', 'P-wave'
+            );
+
+            // S-Waves
+            drawWaveRings(sWaves,
+                { color: '#F59E0B', weight: 1.5, fillOpacity: 0, dashArray: '6, 6' },
+                's-wave-label', 'S-wave'
+            );
+        }
+    </script>
+</body>
+
+</html>
